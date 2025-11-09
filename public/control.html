@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>🎫 售票控制台</title>
+<link rel="stylesheet" href="style.css">
+<script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+<h1>🎛️ 售票控制台</h1>
+<div id="zones"></div>
+
+<script>
+const socket = io();
+
+// === 即時更新區塊 ===
+socket.on('update', data => {
+  const container = document.getElementById('zones');
+  container.innerHTML = '';
+
+  for (let zone in data.total) {
+    const sold = data.total[zone] - data.remaining[zone];
+    const div = document.createElement('div');
+    div.className = 'zone';
+    div.innerHTML = `
+      <h2>${zone} 區</h2>
+      <p>總數：${data.total[zone]}</p>
+      <p>已售出：${sold}</p>
+      <p>剩餘：${data.remaining[zone]}</p>
+      <button onclick="sell('${zone}')">售出一張</button>
+      <button onclick="refund('${zone}')">退回一張</button>
+    `;
+    container.appendChild(div);
+  }
+});
+
+// === 售出一張 ===
+function sell(zone) {
+  const confirmed = confirm(`確定要售出「${zone} 區」的一張票嗎？`);
+  if (confirmed) socket.emit('sell', zone);
+}
+
+// === 退回一張 ===
+function refund(zone) {
+  const confirmed = confirm(`確定要退回「${zone} 區」的一張票嗎？`);
+  if (confirmed) socket.emit('refund', zone);
+}
+</script>
+</body>
+</html>

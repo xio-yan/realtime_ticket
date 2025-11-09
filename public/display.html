@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>🎟️ 現場剩餘票數</title>
+<link rel="stylesheet" href="style.css">
+<script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="display">
+
+  <img class="banner" src="banner.png" alt="橫幅">
+  <div class="divider"></div>
+  <div class="ticket-title">🎟️ 現場剩餘票數</div>
+
+
+  <!-- 票數顯示區 -->
+  <div id="display" class="ticket-container"></div>
+
+  <script>
+const socket = io();
+let lastData = {};
+
+socket.on('update', data => {
+  const container = document.getElementById('display');
+  const title = document.querySelector('.ticket-title');
+  container.innerHTML = '';
+
+  // ✅ 取得剩餘票數總和
+  const remainingValues = Object.values(data.remaining || {});
+  const totalRemaining = remainingValues.reduce((sum, n) => sum + n, 0);
+
+  // ✅ 若全區都售完
+  if (totalRemaining === 0) {
+    title.textContent = '🚫 票已全部售完';
+    container.style.display = 'none';
+    return; // 不再渲染票卡
+  } else {
+    title.textContent = '🎟️ 現場剩餘票數';
+    container.style.display = 'flex';
+  }
+
+  // ✅ 正常顯示各區票數
+  for (let zone in data.remaining) {
+    const num = data.remaining[zone];
+    const div = document.createElement('div');
+    div.className = 'ticket-card';
+
+    const h2 = document.createElement('h2');
+    h2.textContent = `${zone} 區`;
+
+    const p = document.createElement('p');
+    p.textContent = num;
+
+    if (num === 0) p.classList.add('zero');
+    if (lastData[zone] !== undefined && lastData[zone] !== num) {
+      p.classList.add('number-animate');
+      p.addEventListener('animationend', () => p.classList.remove('number-animate'), { once: true });
+    }
+
+    div.appendChild(h2);
+    div.appendChild(p);
+    container.appendChild(div);
+  }
+
+  lastData = { ...data.remaining };
+});
+</script>
+
+  
+</body>
+</html>
